@@ -34,11 +34,11 @@
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *,*::before,*::after{box-sizing:inherit}
 body{margin:0;background:var(--bg);color:var(--ink);
-  font-family:"Zen Kaku Gothic New","Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic UI","Meiryo","Noto Sans JP",system-ui,sans-serif;
+  font-family:"UD教科書体 NK-R","Zen Kaku Gothic New","Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic UI","Meiryo","Noto Sans JP",system-ui,sans-serif;
   font-size:16px;line-height:1.75;-webkit-text-size-adjust:100%}
 [hidden]{display:none!important}
 .wrap{max-width:960px;margin:0 auto;padding:0 20px}
-h1,h2,h3{font-family:"Shippori Mincho","Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;margin:0;line-height:1.35}
+h1,h2,h3{font-family:"UD教科書体 NK-R","Shippori Mincho","Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;margin:0;line-height:1.35}
 
 .hero{background:var(--hero);color:var(--hero-ink);padding:46px 0 42px;position:relative;overflow:hidden}
 .hero::before{content:"";position:absolute;left:0;right:0;top:50%;height:41px;transform:translateY(-50%);
@@ -50,7 +50,7 @@ h1,h2,h3{font-family:"Shippori Mincho","Hiragino Mincho ProN","Yu Mincho","Noto 
 .step{padding:34px 0 30px;border-top:1px solid var(--line)}
 .step:first-of-type{border-top:0}
 .step-head{display:flex;align-items:baseline;gap:14px;margin-bottom:6px}
-.num{font-family:"Shippori Mincho","Hiragino Mincho ProN","Yu Mincho",serif;font-weight:800;font-size:30px;color:var(--accent);min-width:.9em}
+.num{font-family:"UD教科書体 NK-R","Shippori Mincho","Hiragino Mincho ProN","Yu Mincho",serif;font-weight:800;font-size:30px;color:var(--accent);min-width:.9em}
 .step-head h2{font-size:22px;font-weight:800;letter-spacing:.04em}
 .hint{margin:0 0 16px;color:var(--muted);font-size:15px;max-width:44em}
 .mini{margin:0;color:var(--muted);font-size:14px}
@@ -152,7 +152,7 @@ td.time{white-space:nowrap;font-size:14px;color:var(--muted);padding:10px 8px 0 
     <details id="bulkBox">
       <summary>テキストでまとめて入力する</summary>
       <p class="hint" style="margin-top:8px">セクション名の次の行に、楽器を「,」で区切って書きます。空行でセクションを分けます。</p>
-      <textarea id="bulk" rows="7" spellcheck="false" placeholder="Body&Soul E,F&#10;Basson,B.Cl,B.Sax,Tu,St.B&#10;&#10;Body&Soul B~&#10;Tp 1st,Tp 2nd,Tb 1st"></textarea>
+      <textarea id="bulk" rows="7" spellcheck="false" placeholder="青空のマーチ E,F&#10;Basson,B.Cl,B.Sax,Tu,St.B&#10;&#10;青空のマーチ B~&#10;Tp 1st,Tp 2nd,Tb 1st"></textarea>
       <div class="row"><button class="btn small" id="bulkBtn" type="button">セクションに追加する</button><span class="mini" id="bulkStatus" role="status"></span></div>
     </details>
     <details>
@@ -170,7 +170,7 @@ td.time{white-space:nowrap;font-size:14px;color:var(--muted);padding:10px 8px 0 
   <section id="result" hidden></section>
 </main>
 
-<footer class="wrap foot">入力はこのブラウザにだけ保存されます。指示の内容は、読み取りのためClaudeに送られます。</footer>
+<footer class="wrap foot">入力はこのブラウザにだけ保存されます。</footer>
 
 <script>
 // ==CORE_START==
@@ -703,7 +703,7 @@ function renderDays(){
     };
     const bind=(el,key)=>{el.addEventListener('input',()=>{d[key]=el.value;upd();save();});return el;};
     const iLabel=bind(h('input',{type:'text',value:d.label,placeholder:'例：9/16'}),'label');
-    const iRooms=bind(h('input',{type:'text',value:d.rooms,placeholder:'例：音楽室、小3、理III'}),'rooms');
+    const iRooms=bind(h('input',{type:'text',value:d.rooms,placeholder:'例：音楽室、大教室、中教室'}),'rooms');
     const iSlots=bind(h('textarea',{rows:'4',value:d.slots,placeholder:'例：16:20-16:40'}),'slots');
     upd();
     const del=h('button',{class:'btn small',type:'button',onclick:()=>{state.days.splice(i,1);save();renderDays();}},'この日を削除');
@@ -722,7 +722,7 @@ function renderSections(){
   const box=$('#secs');box.textContent='';
   const list=instNames();
   state.sections.forEach((sec,i)=>{
-    const iName=h('input',{type:'text',value:sec.name,placeholder:'例：Body&Soul E,F'});
+    const iName=h('input',{type:'text',value:sec.name,placeholder:'例：青空のマーチ E,F'});
     iName.addEventListener('input',()=>{sec.name=iName.value;save();updateSummary();});
     const iCnt=h('input',{type:'number',min:'1',max:'10',value:sec.count,inputmode:'numeric'});
     iCnt.addEventListener('input',()=>{sec.count=iCnt.value;save();updateSummary();});
