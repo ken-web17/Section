@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>セクション練スケジューラー</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#eef1f0; --surface:#ffffff; --ink:#16213a; --muted:#566277; --line:#d0d7da; --soft:#e3e8e9;
+  --accent:#8f5f0e; --accent-ink:#ffffff; --room:#1d4fa8;
+  --hero:#16213a; --hero-ink:#f4efe2; --hero-line:#2c3b5e;
+  --danger:#a8231b; --danger-bg:#fbebe8; --warn-bg:#fbf1d8; --warn-line:#d9b45a; --ok:#25683f;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1420; --surface:#182031; --ink:#e8edf5; --muted:#9aa6ba; --line:#2c3850; --soft:#222c40;
+    --accent:#e2b455; --accent-ink:#1a1405; --room:#8db4ff;
+    --hero:#0a0e18; --hero-ink:#f0ead9; --hero-line:#1e2a44;
+    --danger:#ff9a90; --danger-bg:#3a1c1a; --warn-bg:#33290f; --warn-line:#7a6320; --ok:#79d49a;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1420; --surface:#182031; --ink:#e8edf5; --muted:#9aa6ba; --line:#2c3850; --soft:#222c40;
+  --accent:#e2b455; --accent-ink:#1a1405; --room:#8db4ff;
+  --hero:#0a0e18; --hero-ink:#f0ead9; --hero-line:#1e2a44;
+  --danger:#ff9a90; --danger-bg:#3a1c1a; --warn-bg:#33290f; --warn-line:#7a6320; --ok:#79d49a;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Zen Kaku Gothic New","Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic UI","Meiryo","Noto Sans JP",system-ui,sans-serif;
+  font-size:16px;line-height:1.75;-webkit-text-size-adjust:100%}
+[hidden]{display:none!important}
+.wrap{max-width:960px;margin:0 auto;padding:0 20px}
+h1,h2,h3{font-family:"Shippori Mincho","Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;margin:0;line-height:1.35}
+
+.hero{background:var(--hero);color:var(--hero-ink);padding:46px 0 42px;position:relative;overflow:hidden}
+.hero::before{content:"";position:absolute;left:0;right:0;top:50%;height:41px;transform:translateY(-50%);
+  background:repeating-linear-gradient(to bottom,var(--hero-line) 0 1.5px,transparent 1.5px 10px)}
+.hero .wrap{position:relative}
+.hero h1{font-size:clamp(28px,6.4vw,46px);font-weight:800;letter-spacing:.06em}
+.hero p{margin:14px 0 0;max-width:32em;font-size:16px;opacity:.92}
+
+.step{padding:34px 0 30px;border-top:1px solid var(--line)}
+.step:first-of-type{border-top:0}
+.step-head{display:flex;align-items:baseline;gap:14px;margin-bottom:6px}
+.num{font-family:"Shippori Mincho","Hiragino Mincho ProN","Yu Mincho",serif;font-weight:800;font-size:30px;color:var(--accent);min-width:.9em}
+.step-head h2{font-size:22px;font-weight:800;letter-spacing:.04em}
+.hint{margin:0 0 16px;color:var(--muted);font-size:15px;max-width:44em}
+.mini{margin:0;color:var(--muted);font-size:14px}
+
+.field{display:grid;gap:4px}
+.lab{font-size:14px;font-weight:700}
+.sub{font-size:13px;color:var(--muted);font-weight:400}
+input[type=text],input[type=number],textarea{width:100%;font:inherit;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink)}
+textarea{line-height:1.6;resize:vertical}
+input:focus-visible,textarea:focus-visible,button:focus-visible,summary:focus-visible,.ck:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+
+.day,.sec{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:16px;margin-bottom:14px;display:grid;gap:12px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.day-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.sec-top{display:grid;grid-template-columns:1fr 84px 104px;gap:10px;align-items:end}
+.sec-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.sec-tools .grow{flex:1}
+@media (max-width:520px){.sec-top{grid-template-columns:1fr 1fr}.sec-top .field:first-child{grid-column:1/-1}}
+.chips-check{display:flex;flex-wrap:wrap;gap:8px}
+.ck{display:inline-flex;align-items:center;gap:6px;padding:4px 12px 4px 9px;border:1px solid var(--line);border-radius:999px;font-size:15px;cursor:pointer;user-select:none;background:var(--bg)}
+.ck input{margin:0;accent-color:var(--accent);width:16px;height:16px}
+.ck.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+.ck.on input{accent-color:var(--accent-ink)}
+
+.btn{font:inherit;font-weight:700;font-size:15px;border-radius:6px;padding:9px 16px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-size:18px;padding:14px 30px}
+.btn.small{font-size:14px;padding:5px 11px}
+.btn:disabled{opacity:.6;cursor:wait}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:12px 0}
+
+.summary{margin-top:14px}
+.stat{margin:0 0 8px;font-weight:700}
+details{margin:12px 0}
+summary{cursor:pointer;font-weight:700;font-size:15px}
+.note{border-left:4px solid var(--warn-line);background:var(--warn-bg);padding:10px 14px;margin:10px 0;border-radius:0 6px 6px 0;font-size:15px}
+.note.err{border-left-color:var(--danger);background:var(--danger-bg)}
+.note ul{margin:4px 0 0;padding-left:1.2em}
+
+.rules{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:8px}
+.rules li{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:8px 12px;font-size:15px;line-height:1.55}
+.rules input{margin-top:5px;accent-color:var(--accent);width:16px;height:16px}
+.tag{display:inline-block;font-size:12px;border:1px solid var(--muted);color:var(--muted);border-radius:999px;padding:0 8px;margin-right:6px}
+
+.actions{padding:8px 0 34px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+
+#result{padding:34px 0 60px;border-top:2px solid var(--ink)}
+.tabs{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 6px}
+.tab[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.plan-desc{margin:8px 0 10px;color:var(--muted);font-size:15px}
+.metrics{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 14px}
+.metric{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:6px 12px;font-size:14px}
+.metric b{font-size:18px;margin-left:4px}
+.metric.bad b{color:var(--danger)}
+.rrep{list-style:none;margin:0 0 8px;padding:0;font-size:14px;color:var(--muted)}
+.rrep .ok{color:var(--ok)} .rrep .ng{color:var(--danger);font-weight:700}
+.day-title{font-size:19px;font-weight:800;margin:26px 0 4px}
+.tt-wrap{overflow-x:auto;margin:0 0 6px}
+table.tt{border-collapse:separate;border-spacing:6px;min-width:100%}
+table.tt td{vertical-align:top;padding:0}
+td.time{white-space:nowrap;font-size:14px;color:var(--muted);padding:10px 8px 0 2px!important}
+.cell{--h:200;min-width:170px;padding:8px 10px;border-left:5px solid hsl(var(--h) 55% 45%);background:hsl(var(--h) 60% 50% / .15);border-radius:4px;line-height:1.5}
+.cell .sname{font-weight:700;font-size:15px}
+.cell .insts{font-size:14px}
+.cell .room{font-weight:800;font-size:14px;color:var(--room)}
+.empty{color:var(--muted);opacity:.55;padding:10px 8px;font-size:14px}
+.copybar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:22px 0 8px}
+#copyBox{margin-top:8px;min-height:120px}
+.people{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px;margin-top:10px}
+.person{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:10px 12px;font-size:14px;line-height:1.55}
+.person b{font-size:15px}
+.person ul{margin:4px 0 0;padding-left:1.1em}
+.foot{padding:26px 0 40px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+@media (max-width:520px){.wrap{padding:0 16px}.day,.sec{padding:12px}}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="wrap">
+    <h1>セクション練<br>スケジューラー</h1>
+    <p>パート（楽器）が同じ時間にダブらないように、セクション練の時間割を自動で作ります。</p>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="step">
+    <div class="step-head"><span class="num">1</span><h2>練習の日・時間・教室</h2></div>
+    <div id="days"></div>
+    <button class="btn" id="addDay" type="button">＋ 日を追加</button>
+  </section>
+
+  <section class="step">
+    <div class="step-head"><span class="num">2</span><h2>セクションと楽器</h2></div>
+    <div id="secs"></div>
+    <div class="row">
+      <button class="btn" id="addSec" type="button">＋ セクションを追加</button>
+      <button class="btn small" id="clearBtn" type="button">セクションを全部消す</button>
+    </div>
+    <details id="bulkBox">
+      <summary>テキストでまとめて入力する</summary>
+      <p class="hint" style="margin-top:8px">セクション名の次の行に、楽器を「,」で区切って書きます。空行でセクションを分けます。</p>
+      <textarea id="bulk" rows="7" spellcheck="false" placeholder="Body&Soul E,F&#10;Basson,B.Cl,B.Sax,Tu,St.B&#10;&#10;Body&Soul B~&#10;Tp 1st,Tp 2nd,Tb 1st"></textarea>
+      <div class="row"><button class="btn small" id="bulkBtn" type="button">セクションに追加する</button><span class="mini" id="bulkStatus" role="status"></span></div>
+    </details>
+    <details>
+      <summary>楽器の一覧を変える</summary>
+      <label class="field" style="margin-top:8px"><span class="lab">チェックボックスに出る楽器 <span class="sub">（1行に1つ）</span></span><textarea id="instList" rows="8" spellcheck="false"></textarea></label>
+    </details>
+    <div id="summary" class="summary"></div>
+  </section>
+
+  <div class="actions">
+    <button class="btn primary" id="run" type="button">時間割を作る</button>
+    <span class="mini" id="runStatus" role="status"></span>
+  </div>
+
+  <section id="result" hidden></section>
+</main>
+
+<footer class="wrap foot">入力はこのブラウザにだけ保存されます。指示の内容は、読み取りのためClaudeに送られます。</footer>
+
+<script>
+// ==CORE_START==
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function nfkc(s){return String(s==null?'':s).normalize('NFKC');}
+function norm(s){return nfkc(s).toLowerCase().replace(/[\s.・･_\-]/g,'');}
+function splitList(s){return String(s||'').split(/[\n,、，]+/).map(x=>x.trim()).filter(Boolean);}
+function parseInstList(s){const out=[],seen=new Set();splitList(s).forEach(n=>{const k=norm(n);if(k&&!seen.has(k)){seen.add(k);out.push(n);}});return out;}
+function parseRooms(s){
+  s=nfkc(s).trim();
+  if(!s)return[];
+  if(/^\d+$/.test(s)){const n=Math.min(parseInt(s,10),20);return Array.from({length:n},(_,i)=>'教室'+(i+1));}
+  return splitList(s).slice(0,20);
+}
+function parseMinutes(label){
+  const m=nfkc(label).match(/(\d{1,2}):(\d{2})\s*[-~〜–—ー]+\s*(\d{1,2}):(\d{2})/);
+  if(!m)return null;
+  const d=(+m[3]*60+ +m[4])-(+m[1]*60+ +m[2]);
+  return d>0?d:null;
+}
+function parseDays(arr){
+  return arr.map((d,i)=>({label:String(d.label||'').trim()||((i+1)+'日目'),rooms:parseRooms(d.rooms),slots:splitList(d.slots)}));
+}
+function listSlots(days){
+  const slots=[];
+  days.forEach((d,di)=>d.slots.forEach((label,i)=>slots.push({id:slots.length,day:di,idx:i,label,minutes:parseMinutes(label),rooms:d.rooms.length,roomNames:d.rooms,dayLabel:d.label})));
+  return slots;
+}
+function parseSectionsState(arr){
+  const sections=[],errors=[];
+  arr.forEach((s,i)=>{
+    const name=String(s.name||'').trim()||('セクション'+(i+1));
+    const inst=Array.from(new Set((s.inst||[]).map(x=>String(x).trim()).filter(Boolean)));
+    if(!inst.length){errors.push('「'+name+'」に楽器が選ばれていません（このセクションは使いません）');return;}
+    const c=Math.max(1,Math.min(10,parseInt(nfkc(s.count),10)||1));
+    const mm=parseInt(nfkc(s.minutes),10);
+    sections.push({name,inst,count:c,minutes:mm>0?mm:0});
+  });
+  return{sections,errors};
+}
+function songKey(name){return nfkc(name).trim().split(/\s+/)[0]||'';}
+
+/* ---- 指示（ルール） ---- */
+function matchTarget(t,sec,si){
+  if(!t||typeof t!=='object')return false;
+  let any=false;
+  if(t.instruments&&t.instruments.length){any=true;const set=new Set(sec.inst.map(norm));if(!t.instruments.some(x=>set.has(norm(x))))return false;}
+  if(t.nameContains){any=true;if(!norm(sec.name).includes(norm(t.nameContains)))return false;}
+  if(t.sectionIds&&t.sectionIds.length){any=true;if(!t.sectionIds.map(Number).includes(si))return false;}
+  return any;
+}
+function describeTarget(t,sections){
+  const only=t.sectionIds&&!t.instruments&&!t.nameContains;
+  if(only)return t.sectionIds.map(i=>sections[i]?('「'+sections[i].name+'」'):('#'+i)).join('・');
+  const parts=[];
+  if(t.instruments)parts.push(t.instruments.join('・')+'を含む');
+  if(t.nameContains)parts.push('名前に「'+t.nameContains+'」を含む');
+  if(t.sectionIds)parts.push(t.sectionIds.map(i=>sections[i]?('「'+sections[i].name+'」'):('#'+i)).join('・')+'のうち');
+  return parts.join('、')+'セクション';
+}
+function describeRule(r,sections,slots){
+  const sl=ids=>{const a=ids.slice(0,4).map(i=>slots[i]?(slots[i].dayLabel+' '+slots[i].label):('#'+i));return a.join('、')+(ids.length>4?' など':'');};
+  let t='';
+  switch(r.type){
+    case'room_only':t=describeTarget(r.target,sections)+'は、'+r.rooms.join('か')+'だけを使う';break;
+    case'room_not':t=describeTarget(r.target,sections)+'は、'+r.rooms.join('・')+'を使わない';break;
+    case'time_only':t=describeTarget(r.target,sections)+'は、'+sl(r.slotIds)+'の枠だけに入れる';break;
+    case'time_not':t=describeTarget(r.target,sections)+'は、'+sl(r.slotIds)+'の枠に入れない';break;
+    case'not_together':t=describeTarget(r.a,sections)+'と'+describeTarget(r.b,sections)+'は、同じ時間に入れない';break;
+    case'before':t=describeTarget(r.first,sections)+'を、'+describeTarget(r.then,sections)+'より前の時間枠に入れる';break;
+    case'min_minutes':t=describeTarget(r.target,sections)+'は、'+r.minutes+'分以上の枠に入れる';break;
+    default:t='（読み取れないルール）';
+  }
+  return t;
+}
+function sanitizeTarget(t){
+  if(!t||typeof t!=='object')return null;
+  const o={};
+  const ins=Array.isArray(t.instruments)?t.instruments:(typeof t.instruments==='string'?[t.instruments]:[]);
+  const a=ins.map(x=>String(x).trim()).filter(Boolean);if(a.length)o.instruments=a;
+  if(typeof t.nameContains==='string'&&t.nameContains.trim())o.nameContains=t.nameContains.trim();
+  if(Array.isArray(t.sectionIds)){const b=t.sectionIds.map(Number).filter(n=>Number.isInteger(n));if(b.length)o.sectionIds=b;}
+  return Object.keys(o).length?o:null;
+}
+function parseSlotIds(a,L){
+  return Array.from(new Set((Array.isArray(a)?a:[a]).map(x=>parseInt(String(x).replace(/^s/i,''),10)).filter(n=>Number.isInteger(n)&&n>=0&&n<L)));
+}
+function sanitizeRules(raw,L){
+  const rules=[],unclear=[];
+  if(raw&&Array.isArray(raw.unclear))raw.unclear.forEach(u=>{if(u)unclear.push(String(u));});
+  const list=raw&&Array.isArray(raw.rules)?raw.rules:[];
+  list.forEach((r,i)=>{
+    if(!r||typeof r!=='object')return;
+    const base={id:'r'+i,enabled:true,type:r.type,strength:r.strength==='prefer'?'prefer':'must'};
+    let ok=null;
+    if(r.type==='room_only'||r.type==='room_not'){
+      const t=sanitizeTarget(r.target);
+      const rooms=(Array.isArray(r.rooms)?r.rooms:[r.rooms]).map(x=>String(x==null?'':x).trim()).filter(Boolean);
+      if(t&&rooms.length)ok=Object.assign(base,{target:t,rooms});
+    }else if(r.type==='time_only'||r.type==='time_not'){
+      const t=sanitizeTarget(r.target),ids=parseSlotIds(r.slotIds,L);
+      if(t&&ids.length)ok=Object.assign(base,{target:t,slotIds:ids});
+    }else if(r.type==='not_together'){
+      const a=sanitizeTarget(r.a),b=sanitizeTarget(r.b);
+      if(a&&b)ok=Object.assign(base,{a,b});
+    }else if(r.type==='before'){
+      const a=sanitizeTarget(r.first),b=sanitizeTarget(r.then);
+      if(a&&b)ok=Object.assign(base,{first:a,then:b});
+    }else if(r.type==='min_minutes'){
+      const t=sanitizeTarget(r.target),m=parseInt(r.minutes,10);
+      if(t&&m>0)ok=Object.assign(base,{target:t,minutes:m});
+    }
+    if(ok)rules.push(ok);else unclear.push('うまく読み取れなかった指示があります');
+  });
+  return{rules,unclear:Array.from(new Set(unclear))};
+}
+
+/* ---- 問題の組み立て ---- */
+function buildProblem(days,sections,opts,rules){
+  rules=(rules||[]).filter(r=>r&&r.enabled!==false);
+  const instIdx=new Map(),insts=[];
+  const idOf=n=>{const k=norm(n);if(!instIdx.has(k)){instIdx.set(k,insts.length);insts.push(n);}return instIdx.get(k);};
+  const sessions=[];
+  sections.forEach((sec,si)=>{const ii=Array.from(new Set(sec.inst.map(idOf)));for(let k=0;k<sec.count;k++)sessions.push({sec:si,k,inst:ii});});
+  const slots=listSlots(days);
+  const S=sessions.length,L=slots.length,D=days.length,I=insts.length;
+  const notes=[];
+  const full=days.map(d=>d.rooms.length?((1<<d.rooms.length)-1):0);
+  const mask=sessions.map(()=>full.slice());
+  const slotOK=new Uint8Array(Math.max(1,S*L)).fill(1);
+  const pen=new Float32Array(Math.max(1,S*L));
+  const conf=new Uint8Array(Math.max(1,S*S)),sconf=new Uint8Array(Math.max(1,S*S));
+  const precOut=sessions.map(()=>[]),precIn=sessions.map(()=>[]),sprecOut=sessions.map(()=>[]),sprecIn=sessions.map(()=>[]);
+  const roomPen=sessions.map(()=>days.map(d=>new Float32Array(Math.max(1,d.rooms.length))));
+  const softChecks=[];
+  let hasConf=false,hasPrec=false,hasRoomRule=false,hasSoft=false,hasSConf=false;
+  sessions.forEach((s,idx)=>{
+    const mm=sections[s.sec].minutes;
+    if(mm>0)slots.forEach(sl=>{if(sl.minutes!=null&&sl.minutes<mm)slotOK[idx*L+sl.id]=0;});
+  });
+  const sel=t=>{const a=[];sessions.forEach((s,idx)=>{if(matchTarget(t,sections[s.sec],s.sec))a.push(idx);});return a;};
+  rules.forEach(r=>{
+    const soft=r.strength==='prefer';
+    const text=describeRule(r,sections,slots);
+    const skip=why=>notes.push('「'+text+'」：'+why+'（このルールは使いません）');
+    if(r.type==='room_only'||r.type==='room_not'){
+      const T=sel(r.target);
+      if(!T.length)return skip('当てはまるセクションがありません');
+      const bits=days.map(d=>{const names=d.rooms.map(norm);return r.rooms.map(x=>names.indexOf(norm(x))).filter(i=>i>=0).reduce((m,i)=>m|(1<<i),0);});
+      if(!bits.some(b=>b))return skip('その教室名が、ステップ1の教室に見つかりません');
+      const only=r.type==='room_only';
+      if(!soft){
+        hasRoomRule=true;
+        T.forEach(s=>days.forEach((d,di)=>{mask[s][di]=only?(mask[s][di]&bits[di]):(mask[s][di]&~bits[di]);}));
+      }else{
+        T.forEach(s=>days.forEach((d,di)=>{for(let ri=0;ri<d.rooms.length;ri++){const inSet=(bits[di]>>ri)&1;if(only?!inSet:inSet)roomPen[s][di][ri]+=1;}}));
+        softChecks.push({id:r.id,check:(assign,roomOf)=>{let n=0;T.forEach(s=>{if(assign[s]<0)return;const d=slots[assign[s]].day,inSet=(bits[d]>>roomOf[s])&1;if(only?!inSet:inSet)n++;});return n;}});
+      }
+    }else if(r.type==='time_only'||r.type==='time_not'||r.type==='min_minutes'){
+      const T=sel(r.target);
+      if(!T.length)return skip('当てはまるセクションがありません');
+      let viol;
+      if(r.type==='min_minutes')viol=l=>slots[l].minutes!=null&&slots[l].minutes<r.minutes;
+      else{const set=new Set(r.slotIds);viol=r.type==='time_only'?(l=>!set.has(l)):(l=>set.has(l));}
+      T.forEach(s=>{for(let l=0;l<L;l++)if(viol(l)){if(soft)pen[s*L+l]+=6;else slotOK[s*L+l]=0;}});
+      if(soft)softChecks.push({id:r.id,check:assign=>{let n=0;T.forEach(s=>{if(assign[s]>=0&&viol(assign[s]))n++;});return n;}});
+    }else if(r.type==='not_together'){
+      const A=sel(r.a),B=sel(r.b);
+      if(!A.length||!B.length)return skip('当てはまるセクションがありません');
+      const pairs=[];
+      A.forEach(s=>B.forEach(t=>{if(s!==t)pairs.push([s,t]);}));
+      pairs.forEach(p=>{if(soft){sconf[p[0]*S+p[1]]=sconf[p[1]*S+p[0]]=1;hasSConf=true;hasSoft=true;}else{conf[p[0]*S+p[1]]=conf[p[1]*S+p[0]]=1;hasConf=true;}});
+      if(soft)softChecks.push({id:r.id,check:assign=>{let n=0;const seen=new Set();pairs.forEach(p=>{const k=Math.min(p[0],p[1])+'_'+Math.max(p[0],p[1]);if(seen.has(k))return;seen.add(k);if(assign[p[0]]>=0&&assign[p[0]]===assign[p[1]])n++;});return n;}});
+    }else if(r.type==='before'){
+      const A=sel(r.first),B=sel(r.then);
+      if(!A.length||!B.length)return skip('当てはまるセクションがありません');
+      const pairs=[];
+      A.forEach(s=>B.forEach(t=>{if(sessions[s].sec!==sessions[t].sec)pairs.push([s,t]);}));
+      pairs.forEach(p=>{if(soft){sprecOut[p[0]].push(p[1]);sprecIn[p[1]].push(p[0]);hasSoft=true;}else{precOut[p[0]].push(p[1]);precIn[p[1]].push(p[0]);hasPrec=true;}});
+      if(soft)softChecks.push({id:r.id,check:assign=>{let n=0;pairs.forEach(p=>{if(assign[p[0]]>=0&&assign[p[1]]>=0&&!(assign[p[0]]<assign[p[1]]))n++;});return n;}});
+    }
+  });
+  const cand=sessions.map((s,idx)=>{const c=[];slots.forEach((sl,l)=>{if(sl.rooms<=0)return;if(!slotOK[idx*L+l])return;if(!mask[idx][sl.day])return;c.push(l);});return c;});
+  return{days,sections,sessions,insts,slots,cand,mask,pen,conf,sconf,precOut,precIn,sprecOut,sprecIn,roomPen,softChecks,notes,rules,
+    hasConf,hasPrec,hasRoomRule,hasSoft,hasSConf,D,I,L,S,maxPerDay:opts.maxPerDay||99,numSecs:sections.length};
+}
+function precheck(P){
+  const warnings=P.notes.slice();let hard=false;
+  const capTotal=P.slots.reduce((a,s)=>a+s.rooms,0);
+  if(P.S>capTotal){hard=true;warnings.push('練習が全部で'+P.S+'回あるのに、使える枠は'+capTotal+'コマ分しかありません。日・時間枠・教室を増やしてください。');}
+  const need=new Array(P.I).fill(0);
+  P.sessions.forEach(s=>s.inst.forEach(i=>need[i]++));
+  const perDay=P.days.map((_,di)=>P.slots.filter(s=>s.day===di&&s.rooms>0).length);
+  const cap=perDay.reduce((a,n)=>a+Math.min(P.maxPerDay,n),0);
+  for(let i=0;i<P.I;i++){
+    if(need[i]>cap){hard=true;warnings.push(P.insts[i]+'：'+need[i]+'回のセクションに入りますが、入れるのは最大'+cap+'回です（時間枠の数を確認）。');}
+  }
+  P.sessions.forEach((s,i)=>{if(P.cand[i].length===0){hard=true;warnings.push('「'+P.sections[s.sec].name+'」を入れられる枠がありません（教室・時間・最低の長さのルールを確認）。');}});
+  return{warnings:Array.from(new Set(warnings)),hard};
+}
+
+/* ---- 解く ---- */
+function makeState(P){
+  return{
+    used:new Uint8Array(Math.max(1,P.L*P.I)),
+    load:new Uint8Array(Math.max(1,P.D*P.I)),
+    slotSess:P.slots.map(()=>[]),
+    secSlot:new Uint8Array(Math.max(1,P.numSecs*P.L)),
+    secDay:new Uint8Array(Math.max(1,P.numSecs*P.D)),
+    assign:new Int32Array(P.S).fill(-1)
+  };
+}
+function matchable(masks,n){
+  const matchRoom=new Array(n).fill(-1);
+  const tryK=(i,seen)=>{
+    const m=masks[i];
+    for(let r=0;r<n;r++){
+      if(((m>>r)&1)&&!seen[r]){seen[r]=1;if(matchRoom[r]<0||tryK(matchRoom[r],seen)){matchRoom[r]=i;return true;}}
+    }
+    return false;
+  };
+  for(let i=0;i<masks.length;i++){if(!tryK(i,new Array(n).fill(0)))return false;}
+  return true;
+}
+function roomsFit(P,st,s,l){
+  const sl=P.slots[l],d=sl.day,masks=[];
+  for(const u of st.slotSess[l])masks.push(P.mask[u][d]);
+  masks.push(P.mask[s][d]);
+  return matchable(masks,sl.rooms);
+}
+function feasible(P,st,s,l){
+  const sl=P.slots[l],d=sl.day,I=P.I,S=P.S,list=st.slotSess[l];
+  if(list.length>=sl.rooms)return false;
+  const ses=P.sessions[s];
+  if(st.secSlot[ses.sec*P.L+l])return false;
+  for(const i of ses.inst){if(st.used[l*I+i])return false;if(st.load[d*I+i]>=P.maxPerDay)return false;}
+  if(P.hasConf){for(const u of list)if(P.conf[s*S+u])return false;}
+  if(P.hasPrec){
+    for(const u of P.precOut[s]){const lu=st.assign[u];if(lu>=0&&!(l<lu))return false;}
+    for(const u of P.precIn[s]){const lu=st.assign[u];if(lu>=0&&!(lu<l))return false;}
+  }
+  if(P.hasRoomRule&&!roomsFit(P,st,s,l))return false;
+  return true;
+}
+function place(P,st,s,l,sign){
+  const ses=P.sessions[s],sl=P.slots[l],I=P.I;
+  if(sign>0)st.slotSess[l].push(s);else{const a=st.slotSess[l];a.splice(a.indexOf(s),1);}
+  st.secSlot[ses.sec*P.L+l]+=sign;st.secDay[ses.sec*P.D+sl.day]+=sign;
+  for(const i of ses.inst){st.used[l*I+i]+=sign;st.load[sl.day*I+i]+=sign;}
+  st.assign[s]=sign>0?l:-1;
+}
+function cost(P,st,s,l,mode,rnd){
+  const ses=P.sessions[s],sl=P.slots[l],I=P.I,d=sl.day,S=P.S;
+  let c=P.pen[s*P.L+l];
+  if(P.hasSoft){
+    if(P.hasSConf)for(const u of st.slotSess[l])if(P.sconf[s*S+u])c+=6;
+    for(const u of P.sprecOut[s]){const lu=st.assign[u];if(lu>=0&&!(l<lu))c+=6;}
+    for(const u of P.sprecIn[s]){const lu=st.assign[u];if(lu>=0&&!(lu<l))c+=6;}
+  }
+  if(mode==='balance'){
+    for(const i of ses.inst)c+=st.load[d*I+i]*3;
+    c+=st.secDay[ses.sec*P.D+d]*6+st.slotSess[l].length*1+l*0.02+rnd()*2;
+  }else if(mode==='compact'){
+    for(const i of ses.inst){
+      if(st.load[d*I+i]>0){
+        const prev=l-1>=0&&P.slots[l-1].day===d&&st.used[(l-1)*I+i];
+        const next=l+1<P.L&&P.slots[l+1].day===d&&st.used[(l+1)*I+i];
+        c+=(prev||next)?-4:2;
+      }
+    }
+    c+=rnd()*2;
+  }else{
+    c+=l*1.0+rnd()*0.8;
+    for(const i of ses.inst)c+=st.load[d*I+i]*0.3;
+  }
+  return c;
+}
+function solveFull(P,mode,seed,timeMs){
+  const rnd=mulberry32(seed),t0=Date.now(),S=P.S;
+  let nodeCount=0;
+  while(Date.now()-t0<timeMs){
+    const st=makeState(P);let backs=0,stop=false;
+    const limit=600+Math.floor(rnd()*900);
+    const done=new Uint8Array(S);
+    const dfs=function(remaining){
+      if(remaining===0)return true;
+      if((++nodeCount&15)===0&&Date.now()-t0>timeMs){stop=true;return false;}
+      let bs=-1,bc=null,bl=1e9,bm=-1;
+      for(let s=0;s<S;s++){
+        if(done[s])continue;
+        const c=[];
+        for(const l of P.cand[s])if(feasible(P,st,s,l))c.push(l);
+        if(c.length===0)return false;
+        const ml=P.sessions[s].inst.length;
+        if(c.length<bl||(c.length===bl&&ml>bm)){bs=s;bc=c;bl=c.length;bm=ml;}
+      }
+      const ordered=bc.map(l=>({l,c:cost(P,st,bs,l,mode,rnd)})).sort((a,b)=>a.c-b.c);
+      done[bs]=1;
+      for(const o of ordered){
+        place(P,st,bs,o.l,1);
+        if(dfs(remaining-1))return true;
+        place(P,st,bs,o.l,-1);
+        if(stop)break;
+        if(++backs>limit){stop=true;break;}
+      }
+      done[bs]=0;
+      return false;
+    };
+    if(dfs(S))return{assign:Array.from(st.assign),unplaced:[]};
+  }
+  return null;
+}
+function solvePartial(P,mode,seed,tries,timeMs){
+  const t0=Date.now(),S=P.S;let best=null;
+  for(let t=0;t<tries;t++){
+    const rnd=mulberry32(seed+t*977);
+    const st=makeState(P),done=new Uint8Array(S),unplaced=[];
+    let left=S;
+    while(left>0){
+      let bs=-1,bc=null,bl=1e9,bm=-1,dead=-1;
+      for(let s=0;s<S;s++){
+        if(done[s])continue;
+        const c=[];
+        for(const l of P.cand[s])if(feasible(P,st,s,l))c.push(l);
+        if(c.length===0){dead=s;break;}
+        const ml=P.sessions[s].inst.length;
+        if(c.length<bl||(c.length===bl&&ml>bm)){bs=s;bc=c;bl=c.length;bm=ml;}
+      }
+      if(dead>=0){done[dead]=1;left--;unplaced.push(dead);continue;}
+      let bestL=-1,bestC=1e18;
+      for(const l of bc){const c=cost(P,st,bs,l,mode,rnd);if(c<bestC){bestC=c;bestL=l;}}
+      place(P,st,bs,bestL,1);done[bs]=1;left--;
+    }
+    if(!best||unplaced.length<best.unplaced.length)best={assign:Array.from(st.assign),unplaced};
+    if(unplaced.length===0||Date.now()-t0>timeMs)break;
+  }
+  return best;
+}
+function assignRooms(P,assign){
+  const roomOf=new Array(assign.length).fill(-1);
+  const bySlot=P.slots.map(()=>[]);
+  assign.forEach((l,s)=>{if(l>=0)bySlot[l].push(s);});
+  bySlot.forEach((list,l)=>{
+    if(!list.length)return;
+    const sl=P.slots[l],d=sl.day,n=sl.rooms;
+    const order=list.slice().sort((a,b)=>P.sessions[b].inst.length-P.sessions[a].inst.length||a-b);
+    let taken=0;
+    order.forEach((s,oi)=>{
+      const rest=order.slice(oi+1);
+      const cands=[];
+      for(let r=0;r<n;r++){if(!((P.mask[s][d]>>r)&1)||((taken>>r)&1))continue;cands.push({r,c:P.roomPen[s][d][r]});}
+      cands.sort((a,b)=>a.c-b.c||a.r-b.r);
+      let pick=-1;
+      for(const cd of cands){
+        const rm=rest.map(x=>P.mask[x][d]&~(taken|(1<<cd.r)));
+        if(matchable(rm,n)){pick=cd.r;break;}
+      }
+      if(pick<0){for(let r=0;r<n;r++)if(!((taken>>r)&1)){pick=r;break;}}
+      roomOf[s]=pick;taken|=(1<<pick);
+    });
+  });
+  return roomOf;
+}
+function makePlan(P,mode,seed,fullMs,skipFull){
+  if(P.S===0)return null;
+  let res=null;
+  if(!skipFull)res=solveFull(P,mode,seed,fullMs);
+  if(!res)res=solvePartial(P,mode,seed,14,900);
+  res.roomOf=assignRooms(P,res.assign);
+  return res;
+}
+function evaluate(P,assign,roomOf){
+  const per=new Map();let placed=0,maxLoad=0,idle=0;
+  assign.forEach((l,s)=>{
+    if(l<0)return;placed++;
+    const sl=P.slots[l];
+    for(const i of P.sessions[s].inst){const k=i*P.D+sl.day;if(!per.has(k))per.set(k,[]);per.get(k).push(sl.idx);}
+  });
+  for(const arr of per.values()){
+    arr.sort((a,b)=>a-b);maxLoad=Math.max(maxLoad,arr.length);
+    idle+=(arr[arr.length-1]-arr[0]+1)-arr.length;
+  }
+  const soft={};
+  P.softChecks.forEach(sc=>{soft[sc.id]=sc.check(assign,roomOf);});
+  return{placed,total:assign.length,idle,maxLoad,soft};
+}
+function explainUnplaced(P,assign){
+  const st=makeState(P);
+  assign.forEach((l,i)=>{if(l>=0)place(P,st,i,l,1);});
+  return function(s){
+    const ses=P.sessions[s],c=P.cand[s];
+    if(c.length===0)return'教室・時間・最低の長さのルールのせいで、入れられる枠がありません';
+    let roomFull=0,ruleBlock=0;const blockers=new Map();
+    for(const l of c){
+      const sl=P.slots[l];
+      if(st.slotSess[l].length>=sl.rooms){roomFull++;continue;}
+      let ib=false;
+      for(const i of ses.inst){if(st.used[l*P.I+i]||st.load[sl.day*P.I+i]>=P.maxPerDay){ib=true;blockers.set(i,(blockers.get(i)||0)+1);}}
+      if(!ib&&!feasible(P,st,s,l))ruleBlock++;
+    }
+    const top=Array.from(blockers.entries()).sort((a,b)=>b[1]-a[1]).slice(0,2).map(e=>P.insts[e[0]]+'（'+e[1]+'枠でふさがり）');
+    const parts=[];
+    if(top.length)parts.push('ネックになっているパート：'+top.join('、'));
+    parts.push('教室がいっぱいの枠：'+roomFull+'／'+c.length);
+    if(ruleBlock)parts.push('ルールで入れられない枠：'+ruleBlock);
+    return parts.join('。');
+  };
+}
+function buildSchedule(P,plan){
+  const bySlot=P.slots.map(()=>[]);
+  plan.assign.forEach((l,s)=>{if(l>=0)bySlot[l].push(s);});
+  bySlot.forEach(a=>a.sort((x,y)=>plan.roomOf[x]-plan.roomOf[y]));
+  return bySlot;
+}
+/* ---- テキスト入力（まとめて） ---- */
+function expandInstToken(tok,list){
+  const k=norm(tok);
+  if(!k)return[];
+  if(k==='allsax'||k==='saxall'||k==='全sax'||k==='全サックス'||k==='サックス全部'){const a=list.filter(n=>norm(n).includes('sax'));if(a.length)return a;}
+  let hit=list.find(n=>norm(n)===k);
+  if(!hit&&k.length>=2){const pre=list.filter(n=>norm(n).startsWith(k));if(pre.length===1)hit=pre[0];}
+  return[hit||String(tok).trim()];
+}
+function parseBulk(text,list){
+  const lines=String(text||'').split(/\r?\n/).map(s=>s.trim());
+  const out=[],errors=[];const newInst=[];
+  const parseInsts=str=>{
+    const raw=nfkc(str).split(/[,、，\/\s]+/).filter(Boolean);
+    const toks=[];
+    raw.forEach(t=>{if(/^\d*(st|nd|rd|th)$/i.test(t)&&toks.length)toks[toks.length-1]+=' '+t;else toks.push(t);});
+    const res=[];
+    toks.forEach(t=>expandInstToken(t,list.concat(newInst)).forEach(n=>{
+      if(!list.concat(newInst).some(x=>norm(x)===norm(n)))newInst.push(n);
+      const canon=list.concat(newInst).find(x=>norm(x)===norm(n));
+      if(!res.includes(canon))res.push(canon);
+    }));
+    return res;
+  };
+  let i=0;
+  while(i<lines.length){
+    if(!lines[i]){i++;continue;}
+    const ln=lines[i];
+    const m=ln.match(/^([^:：]+)[:：](.+)$/);
+    if(m){out.push({name:m[1].trim(),inst:parseInsts(m[2]),count:'1',minutes:''});i++;continue;}
+    if(i+1<lines.length&&lines[i+1]){out.push({name:ln,inst:parseInsts(lines[i+1]),count:'1',minutes:''});i+=2;continue;}
+    errors.push('「'+ln+'」の次の行に楽器がありません');i++;
+  }
+  return{sections:out.filter(s=>s.inst.length),errors,newInst};
+}
+function processImageSections(raw,list){
+  const out=[],unclear=[];
+  if(raw&&Array.isArray(raw.unclear))raw.unclear.forEach(u=>{if(u)unclear.push(String(u));});
+  const arr=raw&&Array.isArray(raw.sections)?raw.sections:[];
+  arr.forEach(s=>{
+    if(!s||typeof s!=='object')return;
+    const name=String(s.name||'').trim();
+    const insts=Array.isArray(s.inst)?s.inst:[];
+    const matched=[];
+    insts.forEach(tok=>{
+      const k=norm(tok);
+      if(!k)return;
+      const hit=list.find(n=>norm(n)===k);
+      if(hit){if(!matched.includes(hit))matched.push(hit);}
+      else unclear.push('楽器「'+tok+'」（'+(name||'?')+'）は一覧にないので省きました');
+    });
+    if(name&&matched.length)out.push({name,inst:matched,count:'1',minutes:''});
+    else if(name)unclear.push('「'+name+'」は楽器を読み取れませんでした');
+    else if(matched.length)unclear.push('名前のないセクションがあったので省きました');
+  });
+  return{sections:out,unclear:Array.from(new Set(unclear))};
+}
+// ==CORE_END==
+
+// ---------- UI ----------
+const $=(s,el)=>(el||document).querySelector(s);
+function h(tag,attrs,...kids){
+  const e=document.createElement(tag);
+  for(const k in(attrs||{})){
+    const v=attrs[k];
+    if(k==='class')e.className=v;
+    else if(k==='value')e.value=v;
+    else if(k.startsWith('on'))e.addEventListener(k.slice(2),v);
+    else e.setAttribute(k,v);
+  }
+  for(const c of kids.flat(3)){if(c===null||c===undefined||c===false)continue;e.append(c.nodeType?c:document.createTextNode(String(c)));}
+  return e;
+}
+const KEY='sectionren-scheduler:v3';
+const INST_LIST=['Picc','Fl 1st','Fl 2nd','Oboe','Basson','Cl 1st','Cl 2nd','Cl 3rd','B.Cl','A.Sax 1st','A.Sax 2nd','T.Sax','B.Sax','Tp 1st','Tp 2nd','Tp 3nd','Hr 1st','Hr 2nd','Hr 3rd','Hr 4st','Tb 1st','Tb 2nd','Tb 3rd','Euph','Tuba','St.B','Drums','Timpani','S.D','B.D','Vib','Glock','Xylo','Pf'];
+const SAMPLE_INSTS=INST_LIST.join('\n');
+const GROUPS=[
+  {label:'Aグループ',names:['Basson','B.Cl','B.Sax','Tuba','St.B']},
+  {label:'Bグループ',names:['T.Sax','Hr 1st','Hr 2nd','Hr 3rd','Hr 4st','Tb 1st','Tb 2nd','Tb 3rd','Euph']},
+  {label:'Cグループ',names:['Oboe','Cl 1st','Cl 2nd','Cl 3rd','Tp 1st','Tp 2nd','Tp 3nd','A.Sax 1st','A.Sax 2nd']},
+  {label:'Dグループ',names:['Picc','Fl 1st','Fl 2nd']},
+  {label:'木管上三部',names:['Fl 1st','Fl 2nd','Oboe','Cl 1st','Cl 2nd','Cl 3rd']}
+].map(g=>({label:g.label,keys:new Set(g.names.map(norm))}));
+const clone=o=>JSON.parse(JSON.stringify(o));
+function defaultState(){return{days:[{label:'',rooms:'',slots:''}],insts:SAMPLE_INSTS,sections:[]};}
+function loadState(){
+  try{
+    const t=localStorage.getItem(KEY);
+    if(t){const o=JSON.parse(t);if(o&&Array.isArray(o.days)&&Array.isArray(o.sections)&&typeof o.insts==='string'){
+      return Object.assign(defaultState(),o,{rules:Array.isArray(o.rules)?o.rules:[],unclear:Array.isArray(o.unclear)?o.unclear:[]});}}
+  }catch(e){}
+  return null;
+}
+let state=loadState()||defaultState();
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+let runCount=0;
+const instNames=()=>parseInstList(state.insts);
+
+function twoStep(btn,askLabel,fn){
+  const orig=btn.textContent;let timer=null;
+  btn.addEventListener('click',()=>{
+    if(timer){clearTimeout(timer);timer=null;btn.textContent=orig;fn();return;}
+    btn.textContent=askLabel;
+    timer=setTimeout(()=>{timer=null;btn.textContent=orig;},3000);
+  });
+}
+
+/* ---- ステップ1：日 ---- */
+function renderDays(){
+  const box=$('#days');box.textContent='';
+  state.days.forEach((d,i)=>{
+    const calc=h('p',{class:'mini'});
+    const upd=()=>{
+      const r=parseRooms(d.rooms).length,s=splitList(d.slots).length;
+      calc.textContent=s+'枠 × '+r+'教室 ＝ 最大'+(s*r)+'コマ';
+    };
+    const bind=(el,key)=>{el.addEventListener('input',()=>{d[key]=el.value;upd();save();});return el;};
+    const iLabel=bind(h('input',{type:'text',value:d.label,placeholder:'例：9/16'}),'label');
+    const iRooms=bind(h('input',{type:'text',value:d.rooms,placeholder:'例：音楽室、小3、理III'}),'rooms');
+    const iSlots=bind(h('textarea',{rows:'4',value:d.slots,placeholder:'例：16:20-16:40'}),'slots');
+    upd();
+    const del=h('button',{class:'btn small',type:'button',onclick:()=>{state.days.splice(i,1);save();renderDays();}},'この日を削除');
+    box.append(h('div',{class:'day'},
+      h('div',{class:'grid2'},
+        h('label',{class:'field'},h('span',{class:'lab'},'日付・呼び名'),iLabel),
+        h('label',{class:'field'},h('span',{class:'lab'},'使える教室 ',h('span',{class:'sub'},'（数、または名前を「、」区切り）')),iRooms)),
+      h('label',{class:'field'},h('span',{class:'lab'},'時間枠 ',h('span',{class:'sub'},'（1行に1枠）')),iSlots),
+      h('div',{class:'day-foot'},calc,state.days.length>1?del:null)
+    ));
+  });
+}
+
+/* ---- ステップ2：セクション ---- */
+function renderSections(){
+  const box=$('#secs');box.textContent='';
+  const list=instNames();
+  state.sections.forEach((sec,i)=>{
+    const iName=h('input',{type:'text',value:sec.name,placeholder:'例：Body&Soul E,F'});
+    iName.addEventListener('input',()=>{sec.name=iName.value;save();updateSummary();});
+    const iCnt=h('input',{type:'number',min:'1',max:'10',value:sec.count,inputmode:'numeric'});
+    iCnt.addEventListener('input',()=>{sec.count=iCnt.value;save();updateSummary();});
+    const iMin=h('input',{type:'number',min:'1',max:'240',value:sec.minutes,inputmode:'numeric',placeholder:'分'});
+    iMin.addEventListener('input',()=>{sec.minutes=iMin.value;save();});
+    const chips=h('div',{class:'chips-check'});
+    const sel=new Set((sec.inst||[]).map(norm));
+    const boxes=[];
+    const sync=()=>{sec.inst=boxes.filter(b=>b.cb.checked).map(b=>b.n);save();updateSummary();};
+    list.forEach(n=>{
+      const cb=h('input',{type:'checkbox'});cb.checked=sel.has(norm(n));
+      const lab=h('label',{class:'ck'+(cb.checked?' on':'')},cb,n);
+      cb.addEventListener('change',()=>{lab.classList.toggle('on',cb.checked);sync();});
+      boxes.push({n,cb,lab});chips.append(lab);
+    });
+    const setWhere=(test,val)=>{boxes.forEach(b=>{if(test(norm(b.n))){b.cb.checked=val;b.lab.classList.toggle('on',val);}});sync();};
+    const tools=h('div',{class:'sec-tools'},
+      h('span',{class:'mini'},'まとめて選ぶ：'),
+      GROUPS.map(g=>h('button',{class:'btn small',type:'button',onclick:()=>setWhere(k=>g.keys.has(k),true)},g.label)),
+      h('button',{class:'btn small',type:'button',onclick:()=>setWhere(()=>true,false)},'全部はずす'),
+      h('span',{class:'grow'}),
+      h('button',{class:'btn small',type:'button',onclick:()=>{state.sections.splice(i+1,0,clone(sec));save();renderSections();updateSummary();}},'複製'),
+      h('button',{class:'btn small',type:'button',onclick:()=>{state.sections.splice(i,1);save();renderSections();updateSummary();}},'削除'));
+    box.append(h('div',{class:'sec'},
+      h('div',{class:'sec-top'},
+        h('label',{class:'field'},h('span',{class:'lab'},'セクションの名前'),iName),
+        h('label',{class:'field'},h('span',{class:'lab'},'回数'),iCnt),
+        h('label',{class:'field'},h('span',{class:'lab'},'最低（分）'),iMin)),
+      chips,tools));
+  });
+  if(!state.sections.length)box.append(h('p',{class:'mini'},'まだセクションがありません。下のボタンで追加してください。'));
+}
+function updateSummary(){
+  const r=parseSectionsState(state.sections);
+  const box=$('#summary');box.textContent='';
+  const total=r.sections.reduce((a,s)=>a+s.count,0);
+  const kinds=new Set();r.sections.forEach(s=>s.inst.forEach(n=>kinds.add(norm(n))));
+  box.append(h('p',{class:'stat'},'セクション '+r.sections.length+'　練習コマ合計 '+total+'　使う楽器 '+kinds.size+'種'));
+  if(r.errors.length)box.append(h('div',{class:'note'},h('ul',null,r.errors.slice(0,8).map(e=>h('li',null,e)))));
+}
+
+/* ---- 実行 ---- */
+const MODES=[
+  {key:'balance',name:'案1　バランス型',desc:'1つのパートの負担が偏らないように、練習を日と時間に散らします。'},
+  {key:'compact',name:'案2　待ち時間が少ない型',desc:'同じパートの練習をなるべく連続させて、練習と練習のあいだの待ち時間を減らします。'},
+  {key:'early',name:'案3　早く終わる型',desc:'なるべく前の日・前の時間に詰めて、後ろの枠を空けます。'}
+];
+const tick=()=>new Promise(r=>setTimeout(r,25));
+
+async function run(){
+  const btn=$('#run'),status=$('#runStatus');
+  btn.disabled=true;status.textContent='準備中…';
+  await tick();
+  try{
+    const pr=parseSectionsState(state.sections);
+    const days=parseDays(state.days);
+    const P=buildProblem(days,pr.sections,{maxPerDay:99},[]);
+    const fatal=[];
+    if(!P.slots.some(s=>s.rooms>0))fatal.push('使える時間枠と教室が入っていません。ステップ1を確認してください。');
+    if(!pr.sections.length)fatal.push('セクションがありません（楽器にチェックが入っているセクションが必要です）。ステップ2を確認してください。');
+    if(fatal.length){renderResult({P,plans:[],warnings:[],errors:fatal.concat(pr.errors)});return;}
+    const pc=precheck(P);
+    const plans=[];const seen=new Set();let anyFull=false;
+    for(let mi=0;mi<MODES.length;mi++){
+      status.textContent=MODES[mi].name.replace('　',' ')+' を計算中…';
+      await tick();
+      let plan=null;
+      for(let a=0;a<4;a++){
+        const seed=1000*(mi+1)+a*131+runCount*7919;
+        const p=makePlan(P,MODES[mi].key,seed,anyFull||mi===0?1100:500,pc.hard);
+        if(!p)break;
+        const sig=p.assign.join(',');
+        if(!seen.has(sig)){seen.add(sig);plan=p;break;}
+        if(p.unplaced.length>0)break;
+      }
+      if(plan){if(plan.unplaced.length===0)anyFull=true;plans.push({mode:MODES[mi],assign:plan.assign,roomOf:plan.roomOf,unplaced:plan.unplaced});}
+    }
+    runCount++;
+    renderResult({P,plans,warnings:pc.warnings,errors:pr.errors,rules:[]});
+  }finally{
+    btn.disabled=false;status.textContent='';
+  }
+}
+
+/* ---- 結果 ---- */
+function songHue(P,si){
+  const keys=[];P.sections.forEach(s=>{const k=songKey(s.name);if(!keys.includes(k))keys.push(k);});
+  return(keys.indexOf(songKey(P.sections[si].name))*67+205)%360;
+}
+function sessionInfo(P,s){
+  const ses=P.sessions[s],sec=P.sections[ses.sec];
+  return{name:sec.name+(sec.count>1?'（'+(ses.k+1)+'回目）':''),insts:ses.inst.map(i=>P.insts[i])};
+}
+function planText(P,plan){
+  const by=buildSchedule(P,plan);const out=['【セクション練 時間割】'];
+  P.days.forEach((d,di)=>{
+    const sl=P.slots.filter(x=>x.day===di&&x.rooms>0);if(!sl.length)return;
+    out.push('','■ '+d.label);
+    sl.forEach(x=>{
+      out.push(x.label);
+      if(!by[x.id].length)out.push('  （なし）');
+      by[x.id].forEach(s=>{const t=sessionInfo(P,s);out.push('  '+x.roomNames[plan.roomOf[s]]+'：'+t.name+'（'+t.insts.join(', ')+'）');});
+    });
+  });
+  return out.join('\n');
+}
+function partEntries(P,plan){
+  const by=buildSchedule(P,plan);const map=P.insts.map(()=>[]);
+  by.forEach((arr,l)=>{arr.forEach(s=>{
+    const sl=P.slots[l],t=sessionInfo(P,s);
+    P.sessions[s].inst.forEach(i=>map[i].push({l,text:sl.dayLabel+' '+sl.label+'　'+t.name+'（'+sl.roomNames[plan.roomOf[s]]+'）'}));
+  });});
+  map.forEach(a=>a.sort((x,y)=>x.l-y.l));
+  return map;
+}
+function partOrder(P){
+  const order=instNames().map(norm);
+  return P.insts.map((n,i)=>i).sort((a,b)=>{
+    const x=order.indexOf(norm(P.insts[a])),y=order.indexOf(norm(P.insts[b]));
+    return(x<0?999:x)-(y<0?999:y)||a-b;
+  });
+}
+function partText(P,plan){
+  const map=partEntries(P,plan);
+  const out=['【セクション練 パート別】'];
+  partOrder(P).forEach(i=>{out.push('','■ '+P.insts[i]);if(!map[i].length)out.push('  （予定なし）');map[i].forEach(e=>out.push('  '+e.text));});
+  return out.join('\n');
+}
+async function copyText(text,statusEl){
+  const ta=$('#copyBox');
+  try{await navigator.clipboard.writeText(text);statusEl.textContent='コピーしました';return;}catch(e){}
+  ta.hidden=false;ta.value=text;ta.focus();ta.select();
+  try{if(document.execCommand('copy')){statusEl.textContent='コピーしました';return;}}catch(e){}
+  statusEl.textContent='下の枠を全選択してコピーしてください';
+}
+function renderPlan(P,plan,ctx){
+  const wrap=h('div',null);
+  const ev=evaluate(P,plan.assign,plan.roomOf);
+  wrap.append(h('p',{class:'plan-desc'},plan.mode.desc));
+  wrap.append(h('div',{class:'metrics'},
+    h('div',{class:'metric'+(ev.placed<ev.total?' bad':'')},'入った練習',h('b',null,ev.placed+' / '+ev.total)),
+    h('div',{class:'metric'},'待ち時間の合計',h('b',null,ev.idle+'コマ')),
+    h('div',{class:'metric'},'1パートの最大（1日）',h('b',null,ev.maxLoad+'コマ'))));
+  const rules=(ctx.rules||[]);
+  if(rules.length){
+    wrap.append(h('ul',{class:'rrep'},rules.map(r=>{
+      const t=describeRule(r,P.sections,P.slots);
+      if(r.strength==='prefer'&&r.id in ev.soft){
+        const n=ev.soft[r.id];
+        return h('li',{class:n?'ng':'ok'},(n?'△ ':'✓ ')+'できれば：'+t+(n?'（'+n+'か所は守れませんでした）':''));
+      }
+      return h('li',{class:'ok'},'✓ '+t);
+    })));
+  }
+  if(plan.unplaced.length){
+    const ex=explainUnplaced(P,plan.assign);
+    wrap.append(h('div',{class:'note err'},'入りきらなかった練習があります：',
+      h('ul',null,plan.unplaced.map(s=>{const t=sessionInfo(P,s);return h('li',null,t.name+'　'+ex(s));})),
+      h('div',{style:'margin-top:6px'},'日・時間枠・教室を増やすか、ルールをゆるめると入るかもしれません。')));
+  }
+  const by=buildSchedule(P,plan);
+  P.days.forEach((d,di)=>{
+    const sl=P.slots.filter(x=>x.day===di&&x.rooms>0);if(!sl.length)return;
+    const cols=Math.max(1,...sl.map(x=>by[x.id].length));
+    const rows=sl.map(x=>{
+      const tds=[h('td',{class:'time'},x.label)];
+      for(let c=0;c<cols;c++){
+        const s=by[x.id][c];
+        if(s===undefined){tds.push(h('td',null,h('div',{class:'empty'},'—')));continue;}
+        const t=sessionInfo(P,s);
+        tds.push(h('td',null,h('div',{class:'cell',style:'--h:'+songHue(P,P.sessions[s].sec)},
+          h('div',{class:'room'},x.roomNames[plan.roomOf[s]]),
+          h('div',{class:'sname'},t.name),
+          h('div',{class:'insts'},t.insts.join(', ')))));
+      }
+      return h('tr',null,tds);
+    });
+    wrap.append(h('h3',{class:'day-title'},d.label),h('div',{class:'tt-wrap'},h('table',{class:'tt'},h('tbody',null,rows))));
+  });
+  const cs=h('span',{class:'mini',role:'status'});
+  wrap.append(h('div',{class:'copybar'},
+    h('button',{class:'btn',type:'button',onclick:()=>copyText(partText(P,plan),cs)},'パート別をコピー'),cs));
+  const map=partEntries(P,plan);
+  wrap.append(h('details',null,h('summary',null,'パート別の予定（'+P.insts.length+'パート）'),
+    h('div',{class:'people'},partOrder(P).map(i=>h('div',{class:'person'},h('b',null,P.insts[i]),
+      map[i].length?h('ul',null,map[i].map(e=>h('li',null,e.text))):h('div',{class:'mini'},'予定なし'))))));
+  return wrap;
+}
+function renderResult(ctx){
+  const box=$('#result');box.hidden=false;box.textContent='';
+  box.append(h('div',{class:'step-head'},h('h2',null,'時間割の案')));
+  if(ctx.errors.length)box.append(h('div',{class:'note err'},'確認してください：',h('ul',null,ctx.errors.slice(0,8).map(e=>h('li',null,e)))));
+  if(ctx.warnings.length)box.append(h('div',{class:'note'},'注意：',h('ul',null,ctx.warnings.slice(0,8).map(e=>h('li',null,e)))));
+  if(!ctx.plans.length){box.scrollIntoView({behavior:'smooth',block:'start'});return;}
+  if(ctx.plans.length<MODES.length&&!ctx.plans.some(p=>p.unplaced.length))
+    box.append(h('p',{class:'hint'},'この条件だと組み方の違いが出にくく、案は'+ctx.plans.length+'つでした。'));
+  const tabs=h('div',{class:'tabs',role:'group','aria-label':'案の切り替え'});
+  const body=h('div',null);
+  const show=i=>{
+    [...tabs.children].forEach((b,j)=>b.setAttribute('aria-pressed',String(j===i)));
+    body.textContent='';body.append(renderPlan(ctx.P,Object.assign({},ctx.plans[i],{mode:ctx.plans[i].mode}),ctx));
+  };
+  ctx.plans.forEach((pl,i)=>tabs.append(h('button',{class:'btn tab',type:'button','aria-pressed':'false',onclick:()=>show(i)},pl.mode.name)));
+  box.append(tabs,body,h('div',{class:'row'},h('button',{class:'btn',type:'button',onclick:run},'別の案を作り直す')),
+    h('textarea',{id:'copyBox',hidden:'',readonly:'','aria-label':'コピー用'}));
+  show(0);
+  box.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+/* ---- 初期化 ---- */
+function init(){
+  renderDays();
+  const il=$('#instList');il.value=state.insts;
+  il.addEventListener('change',()=>{
+    state.insts=il.value;
+    const keep=new Set(instNames().map(norm));
+    state.sections.forEach(s=>{s.inst=(s.inst||[]).filter(n=>keep.has(norm(n)));});
+    save();renderSections();updateSummary();
+  });
+  renderSections();
+  $('#addDay').addEventListener('click',()=>{
+    const last=state.days[state.days.length-1]||{rooms:'2',slots:''};
+    state.days.push({label:'',rooms:last.rooms,slots:last.slots});
+    save();renderDays();
+  });
+  $('#addSec').addEventListener('click',()=>{state.sections.push({name:'',inst:[],count:'1',minutes:''});save();renderSections();updateSummary();});
+  twoStep($('#clearBtn'),'本当に消す？',()=>{state.sections=[];save();renderSections();updateSummary();});
+  $('#bulkBtn').addEventListener('click',()=>{
+    const list=instNames();
+    const r=parseBulk($('#bulk').value,list);
+    if(r.newInst.length){state.insts=list.concat(r.newInst).join(', ');il.value=state.insts;}
+    r.sections.forEach(s=>state.sections.push(s));
+    save();renderSections();updateSummary();
+    let msg=r.sections.length+'個のセクションを追加しました。';
+    if(r.newInst.length)msg+=' 新しい楽器：'+r.newInst.join('、')+'。';
+    if(r.errors.length)msg+=' '+r.errors.join('／');
+    $('#bulkStatus').textContent=msg;
+    if(r.sections.length)$('#bulk').value='';
+  });
+  $('#run').addEventListener('click',run);
+  updateSummary();
+}
+if(typeof document!=='undefined')init();
+</script>
+</body>
+</html>
